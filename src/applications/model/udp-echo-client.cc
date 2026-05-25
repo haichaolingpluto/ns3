@@ -132,7 +132,7 @@ UdpEchoClient::DoDispose()
 }
 
 void
-UdpEchoClient::StartApplication()
+UdpEchoClient::StartApplication()//
 {
     NS_LOG_FUNCTION(this);
 
@@ -311,14 +311,14 @@ UdpEchoClient::ScheduleTransmit(Time dt)
 }
 
 void
-UdpEchoClient::Send()
+UdpEchoClient::Send()//负责创建数据包并通过套接字发送，随后进行日志记录与后续调度
 {
-    NS_LOG_FUNCTION(this);
+    NS_LOG_FUNCTION(this);//将当前函数的调用记录到日至系统，包含本对象指针(this)等信息，便于跟踪和调试
 
-    NS_ASSERT(m_sendEvent.IsExpired());
+    NS_ASSERT(m_sendEvent.IsExpired());//只有在上一次的发送事件已经完成或失效，才允许执行新的 Send()。防止重复发送冲突。
 
     Ptr<Packet> p;
-    if (m_dataSize)
+    if (m_dataSize)//如果m_dataSize > 0,说明用户已经通过某种方式(例如SetFill(...))来指定了数据内容和大小，那么就需要将其复制发送
     {
         //
         // If m_dataSize is non-zero, we have a data buffer of the same size that we
@@ -342,10 +342,15 @@ UdpEchoClient::Send()
         //
         p = Create<Packet>(m_size);
     }
+    //p是最重要发送的Packet,其数据内容要要么来自m_data,要么是一个无特定内容的零初始化包
+
     Address localAddress;
-    m_socket->GetSockName(localAddress);
+    m_socket->GetSockName(localAddress);//GetSockName会把这个socket当前绑定的本地IP/端口信息填入localAddress，
+                                        //在后续可能要用来记录日志，或者做 trace 回调时使用。
+
     // call to the trace sinks before the packet is actually sent,
     // so that tags added to the packet can be sent as well
+    
     m_txTrace(p);
     if (Ipv4Address::IsMatchingType(m_peerAddress))
     {
@@ -398,7 +403,7 @@ UdpEchoClient::Send()
 }
 
 void
-UdpEchoClient::HandleRead(Ptr<Socket> socket)
+UdpEchoClient::HandleRead(Ptr<Socket> socket)//
 {
     NS_LOG_FUNCTION(this << socket);
     Ptr<Packet> packet;

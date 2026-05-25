@@ -16,6 +16,12 @@
  *
  * Author: Mathieu Lacage <mathieu.lacage@sophia.inria.fr>
  */
+
+ /*
+    提供创建UDP回显客户端和服务器的辅助工具
+
+    实现请求-响应模型，用于网络测试
+ */
 #include "udp-echo-helper.h"
 
 #include "ns3/names.h"

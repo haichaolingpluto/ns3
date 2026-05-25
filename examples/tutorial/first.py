@@ -17,6 +17,8 @@ from ns import ns
 
 # // Default Network Topology
 # //
+
+
 # //       10.1.1.0
 # // n0 -------------- n1
 # //    point-to-point
@@ -26,7 +28,7 @@ ns.core.LogComponentEnable("UdpEchoClientApplication", ns.core.LOG_LEVEL_INFO)
 ns.core.LogComponentEnable("UdpEchoServerApplication", ns.core.LOG_LEVEL_INFO)
 
 nodes = ns.network.NodeContainer()
-nodes.Create(2)
+nodes.Create(2) # NS3中结点用node来描述  创建两个节点对象，他们在仿真中代表计算机
 
 pointToPoint = ns.point_to_point.PointToPointHelper()
 pointToPoint.SetDeviceAttribute("DataRate", ns.core.StringValue("5Mbps"))

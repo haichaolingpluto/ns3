@@ -1,5 +1,16 @@
 set(target_prefix scratch_)
 
+# 查找 jsoncpp 库
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(JSONCPP jsoncpp)
+
+if (JSONCPP_FOUND)
+  include_directories(${JSONCPP_INCLUDE_DIRS})
+  link_directories(${JSONCPP_LIBRARY_DIRS})
+else()
+  message(FATAL_ERROR "jsoncpp library not found")
+endif()
+
 function(create_scratch source_files)
   # Return early if no sources in the subdirectory
   list(LENGTH source_files number_sources)
@@ -24,13 +35,21 @@ function(create_scratch source_files)
 
   # Get parent directory name
   get_filename_component(scratch_dirname ${scratch_src} DIRECTORY)
-  string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}" "" scratch_dirname
-                 "${scratch_dirname}"
-  )
+  string(REPLACE "${CMAKE_CURRENT_SOURCE_DIR}" "" scratch_dirname "${scratch_dirname}")
   string(REPLACE "/" "_" scratch_dirname "${scratch_dirname}")
 
   # Get source name
-  get_filename_component(scratch_name ${scratch_src} NAME_WE)
+  if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.14.0")
+    get_filename_component(scratch_name ${scratch_src} NAME_WLE)
+  else()
+    get_filename_component(scratch_name ${scratch_src} NAME)
+    string(FIND "${scratch_name}" "." ext_position REVERSE)
+    if(${ext_position} EQUAL -1)
+      message(FATAL_ERROR "Source file has no extension: ${scratch_src}")
+    else()
+      string(SUBSTRING "${scratch_name}" 0 ${ext_position} scratch_name)
+    endif()
+  endif()
 
   set(target_prefix scratch_)
   if(scratch_dirname)
@@ -38,18 +57,22 @@ function(create_scratch source_files)
     set(target_prefix scratch${scratch_dirname}_)
   endif()
 
+  # Ensure the target name is valid (replace invalid characters like parentheses)
+  string(REPLACE "(" "_" scratch_name "${scratch_name}")
+  string(REPLACE ")" "_" scratch_name "${scratch_name}")
+  string(REPLACE " " "_" scratch_name "${scratch_name}")
+
   # Get source absolute path and transform into relative path
   get_filename_component(scratch_src ${scratch_src} ABSOLUTE)
   get_filename_component(scratch_absolute_directory ${scratch_src} DIRECTORY)
-  string(REPLACE "${PROJECT_SOURCE_DIR}" "${CMAKE_OUTPUT_DIRECTORY}"
-                 scratch_directory ${scratch_absolute_directory}
-  )
+  string(REPLACE "${PROJECT_SOURCE_DIR}" "${CMAKE_OUTPUT_DIRECTORY}" scratch_directory ${scratch_absolute_directory})
+
   build_exec(
-          EXECNAME ${scratch_name}
-          EXECNAME_PREFIX ${target_prefix}
-          SOURCE_FILES "${source_files}"
-          LIBRARIES_TO_LINK "${ns3-libs}" "${ns3-contrib-libs}"
-          EXECUTABLE_DIRECTORY_PATH ${scratch_directory}/
+    EXECNAME ${scratch_name}
+    EXECNAME_PREFIX ${target_prefix}
+    SOURCE_FILES "${source_files}"
+    LIBRARIES_TO_LINK "${ns3-libs}" "${ns3-contrib-libs}" "${JSONCPP_LIBRARIES}"
+    EXECUTABLE_DIRECTORY_PATH ${scratch_directory}/
   )
 endfunction()
 
@@ -65,7 +88,7 @@ file(
   GLOB_RECURSE scratch_subdirectories
   CONFIGURE_DEPENDS
   LIST_DIRECTORIES true
-  ${CMAKE_CURRENT_SOURCE_DIR}/**
+  ${CMAKE_CURRENT_SOURCE_DIR}/*
 )
 # Filter out files
 foreach(entry ${scratch_subdirectories})
