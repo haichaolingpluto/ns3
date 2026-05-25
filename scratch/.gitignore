@@ -3,5 +3,6 @@
 !.gitignore
 
 !subdir/
+!*.cc
 !scratch-simulator.cc
 !CMakeLists.txt
